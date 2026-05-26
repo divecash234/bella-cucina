@@ -24,6 +24,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("Starters");
   const [form, setForm] = useState({ name: "", table: "", notes: "" });
   const [status, setStatus] = useState(null); // null | "success" | "sending"
+  const [cartOpen, setCartOpen] = useState(false);
 
   function addToCart(item) {
     setCart((prev) => {
@@ -48,9 +49,9 @@ export default function App() {
       .join("\n");
 
     // Replace these with your EmailJS credentials
-    const SERVICE_ID = "service_0p5pi19";
-    const TEMPLATE_ID = "template_hr38yty";
-    const PUBLIC_KEY = "bO_zudwUcUb7e1Ojo";
+    const SERVICE_ID = "your_service_id";
+    const TEMPLATE_ID = "your_template_id";
+    const PUBLIC_KEY = "your_public_key";
 
     try {
       const { default: emailjs } = await import("https://cdn.jsdelivr.net/npm/@emailjs/browser@4/+esm");
@@ -72,6 +73,48 @@ export default function App() {
     }
   }
 
+  const cartContent = (
+    <>
+      {cart.length === 0 ? (
+        <p style={styles.emptyCart}>Nothing here yet — start adding dishes!</p>
+      ) : (
+        <>
+          <div style={styles.cartList}>
+            {cart.map((item) => (
+              <div key={item.id} style={styles.cartRow}>
+                <div style={{ flex: 1 }}>
+                  <p style={styles.cartName}>{item.name}</p>
+                  <p style={styles.cartSub}>x{item.qty} · €{(item.price * item.qty).toFixed(2)}</p>
+                </div>
+                <button onClick={() => removeFromCart(item.id)} style={styles.removeBtn} className="remove-btn">✕</button>
+              </div>
+            ))}
+          </div>
+          <div style={styles.totalRow}>
+            <span>Total</span>
+            <span style={styles.totalAmt}>€{total.toFixed(2)}</span>
+          </div>
+          <div style={styles.divider} />
+          {status === "success" ? (
+            <div style={styles.successBox}>
+              <p style={{ fontSize: 28, margin: 0 }}>🎉</p>
+              <p style={styles.successText}>Order placed! We'll have it right out.</p>
+            </div>
+          ) : (
+            <>
+              <input style={styles.input} placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <input style={styles.input} placeholder="Table number or Takeaway" value={form.table} onChange={(e) => setForm({ ...form, table: e.target.value })} />
+              <textarea style={{ ...styles.input, height: 72, resize: "none" }} placeholder="Special instructions (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <button onClick={placeOrder} style={{ ...styles.submitBtn, opacity: (!form.name || !form.table) ? 0.5 : 1 }} disabled={!form.name || !form.table || status === "sending"} className="submit-btn">
+                {status === "sending" ? "Sending…" : "Place Order →"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+
   return (
     <div style={styles.page}>
       <style>{css}</style>
@@ -90,21 +133,13 @@ export default function App() {
       <div style={styles.layout}>
         {/* Menu */}
         <main style={styles.menu}>
-          {/* Tabs */}
           <div style={styles.tabs}>
             {Object.keys(menuData).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveTab(cat)}
-                style={{ ...styles.tab, ...(activeTab === cat ? styles.tabActive : {}) }}
-                className="tab-btn"
-              >
+              <button key={cat} onClick={() => setActiveTab(cat)} style={{ ...styles.tab, ...(activeTab === cat ? styles.tabActive : {}) }} className="tab-btn">
                 {cat}
               </button>
             ))}
           </div>
-
-          {/* Items */}
           <div style={styles.itemGrid}>
             {menuData[activeTab].map((item) => (
               <div key={item.id} style={styles.card} className="card">
@@ -114,84 +149,40 @@ export default function App() {
                 </div>
                 <div style={styles.cardBottom}>
                   <span style={styles.price}>€{item.price.toFixed(2)}</span>
-                  <button onClick={() => addToCart(item)} style={styles.addBtn} className="add-btn">
-                    + Add
-                  </button>
+                  <button onClick={() => addToCart(item)} style={styles.addBtn} className="add-btn">+ Add</button>
                 </div>
               </div>
             ))}
           </div>
         </main>
 
-        {/* Sidebar */}
-        <aside style={styles.sidebar}>
+        {/* Desktop Sidebar */}
+        <aside className="desktop-sidebar" style={styles.sidebar}>
           <h2 style={styles.sidebarTitle}>Your Order</h2>
-
-          {cart.length === 0 ? (
-            <p style={styles.emptyCart}>Nothing here yet — start adding dishes!</p>
-          ) : (
-            <>
-              <div style={styles.cartList}>
-                {cart.map((item) => (
-                  <div key={item.id} style={styles.cartRow}>
-                    <div style={{ flex: 1 }}>
-                      <p style={styles.cartName}>{item.name}</p>
-                      <p style={styles.cartSub}>x{item.qty} · €{(item.price * item.qty).toFixed(2)}</p>
-                    </div>
-                    <button onClick={() => removeFromCart(item.id)} style={styles.removeBtn} className="remove-btn">✕</button>
-                  </div>
-                ))}
-              </div>
-              <div style={styles.totalRow}>
-                <span>Total</span>
-                <span style={styles.totalAmt}>€{total.toFixed(2)}</span>
-              </div>
-
-              <div style={styles.divider} />
-
-              {/* Form */}
-              {status === "success" ? (
-                <div style={styles.successBox}>
-                  <p style={{ fontSize: 28, margin: 0 }}>🎉</p>
-                  <p style={styles.successText}>Order placed! We'll have it right out.</p>
-                </div>
-              ) : (
-                <>
-                  <input
-                    style={styles.input}
-                    placeholder="Your name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                  <input
-                    style={styles.input}
-                    placeholder="Table number or Takeaway"
-                    value={form.table}
-                    onChange={(e) => setForm({ ...form, table: e.target.value })}
-                  />
-                  <textarea
-                    style={{ ...styles.input, height: 72, resize: "none" }}
-                    placeholder="Special instructions (optional)"
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  />
-                  <button
-                    onClick={placeOrder}
-                    style={{
-                      ...styles.submitBtn,
-                      opacity: (!form.name || !form.table) ? 0.5 : 1,
-                    }}
-                    disabled={!form.name || !form.table || status === "sending"}
-                    className="submit-btn"
-                  >
-                    {status === "sending" ? "Sending…" : "Place Order →"}
-                  </button>
-                </>
-              )}
-            </>
-          )}
+          {cartContent}
         </aside>
       </div>
+
+      {/* Mobile: floating cart button */}
+      {cart.length > 0 && (
+        <button className="mobile-cart-btn" onClick={() => setCartOpen(true)} style={styles.floatingBtn}>
+          🛒 View Order · €{total.toFixed(2)}
+          <span style={styles.cartBadge}>{cart.reduce((s, i) => s + i.qty, 0)}</span>
+        </button>
+      )}
+
+      {/* Mobile: cart drawer */}
+      {cartOpen && (
+        <div style={styles.overlay} onClick={() => setCartOpen(false)}>
+          <div style={styles.drawer} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.drawerHeader}>
+              <h2 style={{ ...styles.sidebarTitle, margin: 0 }}>Your Order</h2>
+              <button onClick={() => setCartOpen(false)} style={styles.closeBtn}>✕</button>
+            </div>
+            {cartContent}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -229,6 +220,12 @@ const styles = {
   addBtn: { background: olive, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 6, cursor: "pointer", fontFamily: "Georgia, serif", fontSize: 14 },
 
   sidebar: { width: 300, flexShrink: 0, background: cardBg, border: `1px solid #e6d9c8`, borderRadius: 12, padding: 22, position: "sticky", top: 24 },
+  floatingBtn: { position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: rust, color: "#fff", border: "none", borderRadius: 30, padding: "13px 28px", fontSize: 15, fontFamily: "Georgia, serif", fontWeight: "bold", cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", zIndex: 100, display: "flex", alignItems: "center", gap: 10 },
+  cartBadge: { background: "#fff", color: rust, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: "bold" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" },
+  drawer: { background: cardBg, width: "100%", maxHeight: "85vh", borderRadius: "16px 16px 0 0", padding: 24, overflowY: "auto", boxSizing: "border-box" },
+  drawerHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  closeBtn: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: mid, padding: 4 },
   sidebarTitle: { margin: "0 0 16px", fontSize: 20, color: dark, borderBottom: `2px solid ${rust}`, paddingBottom: 10 },
   emptyCart: { color: mid, fontStyle: "italic", fontSize: 14 },
 
@@ -258,4 +255,12 @@ const css = `
   .add-btn:hover { background: #4a5630; }
   .remove-btn:hover { opacity: 0.6; }
   .submit-btn:hover:not(:disabled) { background: #a8441f; }
+
+  @media (max-width: 680px) {
+    .desktop-sidebar { display: none !important; }
+    .mobile-cart-btn { display: flex !important; }
+  }
+  @media (min-width: 681px) {
+    .mobile-cart-btn { display: none !important; }
+  }
 `;
