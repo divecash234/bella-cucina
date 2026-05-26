@@ -49,9 +49,9 @@ export default function App() {
       .join("\n");
 
     // Replace these with your EmailJS credentials
-    const SERVICE_ID = "your_service_id";
-    const TEMPLATE_ID = "your_template_id";
-    const PUBLIC_KEY = "your_public_key";
+    const SERVICE_ID = "service_0p5pi19";
+    const TEMPLATE_ID = "template_hr38yty";
+    const PUBLIC_KEY = "bO_zudwUcUb7e1Ojo";
 
     try {
       const { default: emailjs } = await import("https://cdn.jsdelivr.net/npm/@emailjs/browser@4/+esm");
